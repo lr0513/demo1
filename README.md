@@ -32,5 +32,6 @@ pip install torch transformers scikit-learn swanlab
    - 全部训练轮次结束之后，在测试集上计算最终准确率，输出实验结果。
 
 ## SwanLab可视化查看
-https://swanlab.cn/@lr0513/demo1?utm_source=website_qr&utm_medium=qr_scan
-lr=2e-5,batch_size=32,epochs=4,max_length=32或128时，测试准确率最高，为83.18%
+网址：https://swanlab.cn/@lr0513/demo1?utm_source=website_qr&utm_medium=qr_scan
+
+按照lr→batch_size→epoch→max_length的顺序进行调参后可以得到：lr=2e-5,batch_size=32,epochs=4,max_length=32或128时，测试准确率最高，为83.18%
