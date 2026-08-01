@@ -1,4 +1,6 @@
 {
+  "project": "bert-toutiao-classify",
+  "experiment_name": "bert-base_maxlen128_dropout0.2",
   "data": {
     "train_path": "data/train_3k.txt",
     "dev_path": "data/dev_1k.txt",
@@ -6,16 +8,16 @@
   },
   "train": {
     "seed": 42,
-    "max_len": 64,
+    "max_len": 128,
     "batch_size": 16,
     "lr": 2e-5,
     "epoch": 20,
     "grad_clip_norm": 1.0,
-    "early_stop_patience": 3
+    "early_stop_patience": 5
   },
   "model": {
     "pretrain_name": "bert-base-chinese",
-    "dropout": 0.1,
+    "dropout": 0.2,
     "num_classes": 15
   },
   "save": {

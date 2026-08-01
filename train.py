@@ -1,3 +1,4 @@
+import swanlab
 import torch
 from torch.utils.data import DataLoader
 from torch.optim import AdamW
@@ -17,6 +18,17 @@ def train():
     mkdir_if_not_exist(cfg.save.model_dir)
     mkdir_if_not_exist(cfg.save.log_dir)
 
+    swanlab.init(
+        project=cfg.project.project,
+        experiment_name=cfg.project.experiment_name,
+        config={
+            "model": cfg.model.__dict__,
+            "train": cfg.train.__dict__,
+            "data": cfg.data.__dict__,
+            "device": str(device)
+        }
+    )
+
     # ========== 2. 加载数据集 ==========
     # 先加载训练集，自动生成标签映射
     train_texts, train_labels, label_map = load_data(cfg.data.train_path)
@@ -26,6 +38,8 @@ def train():
 
     # 打印类别对应关系，方便后续对照
     print("类别映射关系：", label_map)
+
+    swanlab.config["label_map"] = label_map
 
     # 构建数据集对象
     train_dataset = NewsDataset(train_texts, train_labels, tokenizer)
@@ -59,15 +73,15 @@ def train():
     optimizer = AdamW(model.parameters(), lr=cfg.train.lr)
 
     total_steps = len(train_loader) * cfg.train.epoch
-    scheduler = get_linear_schedule_with_warmup( # 学习率调度器
+    scheduler = get_linear_schedule_with_warmup(  # 学习率调度器
         optimizer,
-        num_warmup_steps=int(total_steps * 0.1), # 预热步数：总步数的10%
-        num_training_steps=total_steps # 完整训练总步数
+        num_warmup_steps=int(total_steps * 0.1),  # 预热步数：总步数的10%
+        num_training_steps=total_steps  # 完整训练总步数
     )
 
     # ========== 4. 早停与最优模型相关变量 ==========
-    best_dev_acc = 0.0 # 记录验证集历史最高准确率
-    early_stop_counter = 0 # 连续多少轮验证集没有提升
+    best_dev_acc = 0.0  # 记录验证集历史最高准确率
+    early_stop_counter = 0  # 连续多少轮验证集没有提升
     best_model_path = f"{cfg.save.model_dir}/best_model.bin"
 
     # ========== 5. 训练循环 ==========
@@ -91,7 +105,7 @@ def train():
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=cfg.train.grad_clip_norm)
 
             optimizer.step()
-            scheduler.step() # step计数+1，计算、更新下一轮lr
+            scheduler.step()  # step计数+1，计算、更新下一轮lr
 
             epoch_train_loss += loss.item()
 
@@ -103,12 +117,23 @@ def train():
         print(
             f"训练集损失: {avg_train_loss:.4f} | 验证集准确率: {dev_metrics['accuracy']:.4f} | 验证集F1: {dev_metrics['f1']:.4f}")
 
+        # 记录每轮指标，自动生成曲线
+        swanlab.log({
+            "train_loss": avg_train_loss,
+            "val_accuracy": dev_metrics["accuracy"],
+            "val_precision": dev_metrics["precision"],
+            "val_recall": dev_metrics["recall"],
+            "val_f1": dev_metrics["f1"],
+            "learning_rate": scheduler.get_last_lr()[0]
+        }, step=epoch + 1)
+
         # ========== 7. 保存最优模型 + 早停判断 ==========
         if dev_metrics["accuracy"] > best_dev_acc:
             best_dev_acc = dev_metrics["accuracy"]
             early_stop_counter = 0
             torch.save(model.state_dict(), best_model_path)
             print(f"✅ 验证集准确率刷新！保存最优模型，当前最佳准确率: {best_dev_acc:.4f}")
+            swanlab.config["best_val_accuracy"] = best_dev_acc
         else:
             early_stop_counter += 1
             print(f"⏳ 验证集未提升，连续{early_stop_counter}轮，最佳准确率: {best_dev_acc:.4f}")
@@ -130,5 +155,14 @@ def train():
     print(f"宏召回率: {test_metrics['recall']:.4f}")
     print(f"宏F1值:   {test_metrics['f1']:.4f}")
     print("=" * 50)
+
+    swanlab.log({
+        "test_accuracy": test_metrics["accuracy"],
+        "test_precision": test_metrics["precision"],
+        "test_recall": test_metrics["recall"],
+        "test_f1": test_metrics["f1"]
+    })
+
+    swanlab.finish()
 
     return test_metrics, label_map

@@ -36,6 +36,12 @@ class SaveConfig:
     log_dir: str
 
 
+@dataclass
+class ProjectConfig:
+    project: str
+    experiment_name: str
+
+
 # 全局配置总类，一次性读取所有配置
 class Config:
     def __init__(self, json_path: str = "config.json"):
@@ -46,5 +52,9 @@ class Config:
         self.train = TrainConfig(**config["train"])
         self.model = ModelConfig(**config["model"])
         self.save = SaveConfig(**config["save"])
+        self.project = ProjectConfig(
+            project=config["project"],
+            experiment_name=config["experiment_name"]
+        )
 
 cfg = Config()
