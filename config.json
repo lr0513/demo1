@@ -1,0 +1,25 @@
+{
+  "data": {
+    "train_path": "data/train_3k.txt",
+    "dev_path": "data/dev_1k.txt",
+    "test_path": "data/test_1k.txt"
+  },
+  "train": {
+    "seed": 42,
+    "max_len": 64,
+    "batch_size": 16,
+    "lr": 2e-5,
+    "epoch": 20,
+    "grad_clip_norm": 1.0,
+    "early_stop_patience": 3
+  },
+  "model": {
+    "pretrain_name": "bert-base-chinese",
+    "dropout": 0.1,
+    "num_classes": 15
+  },
+  "save": {
+    "model_dir": "save_model/",
+    "log_dir": "logs/"
+  }
+}
