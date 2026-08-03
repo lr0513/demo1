@@ -94,4 +94,4 @@ https://swanlab.cn/@lr0513/bert-toutiao-classify/runs/1qu7ebkj</br>
 
 
 **交互式预测示例**
-![|200](https://obsidian-1322827540.cos.ap-guangzhou.myqcloud.com/img/cb39d6024d5895faa2990bc49f9ab1e7.png)
+![](https://obsidian-1322827540.cos.ap-guangzhou.myqcloud.com/img/cb39d6024d5895faa2990bc49f9ab1e7.png)
