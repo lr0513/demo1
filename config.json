@@ -18,7 +18,8 @@
   "model": {
     "pretrain_name": "bert-base-chinese",
     "dropout": 0.2,
-    "num_classes": 15
+    "num_classes": 15,
+    "hidden_size": 768
   },
   "save": {
     "model_dir": "save_model/",

@@ -16,7 +16,7 @@ class TextClassificationModel(nn.Module):
         # Dropout层：防止过拟合，随即损失一部分神经元使其置0
         self.dropout = nn.Dropout(cfg.model.dropout)
         # 分类全连接层：把768维的向量映射到类别数
-        self.classifier = nn.Linear(768, cfg.model.num_classes)
+        self.classifier = nn.Linear(cfg.model.hidden_size, cfg.model.num_classes)
 
     def forward(self, input_idx, attention_mask, labels=None):
         """

@@ -27,6 +27,7 @@ class ModelConfig:
     pretrain_name: str
     dropout: float
     num_classes: int
+    hidden_size: int
 
 
 @dataclass
