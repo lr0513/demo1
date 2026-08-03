@@ -1,3 +1,5 @@
+import json
+
 import swanlab
 import torch
 from torch.utils.data import DataLoader
@@ -164,5 +166,8 @@ def train():
     })
 
     swanlab.finish()
+
+    with open("./label_map.json", "w", encoding="utf-8") as f:
+        json.dump(label_map, f, ensure_ascii=False, indent=2)
 
     return test_metrics, label_map
