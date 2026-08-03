@@ -92,5 +92,9 @@ https://swanlab.cn/@lr0513/bert-toutiao-classify/runs/1qu7ebkj</br>
 **结果分析**：
 > 验证集最优指标与测试集指标差距很小，模型泛化性能良好，无严重过拟合。少量类别存在识别混淆，主要来自类别边界模糊、样本不均衡问题。
 
+<<<<<<< HEAD
 
 ![](https://obsidian-1322827540.cos.ap-guangzhou.myqcloud.com/img/cb39d6024d5895faa2990bc49f9ab1e7.png)
+=======
+![](https://obsidian-1322827540.cos.ap-guangzhou.myqcloud.com/img/cb39d6024d5895faa2990bc49f9ab1e7.png)
+>>>>>>> 5d513edb6b0bbc3a23f221a6939c60b87ddd641f
