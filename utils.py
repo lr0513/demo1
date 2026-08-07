@@ -2,7 +2,6 @@ import os
 import random
 import numpy as np
 import torch
-from config import cfg
 
 
 def set_seed(seed: int):
@@ -11,7 +10,7 @@ def set_seed(seed: int):
     """
     # 控制Python内置rando库的随机操作
     random.seed(seed)
-    # 控制Numpy库的所有随即运算
+    # 控制Numpy库的所有随机运算
     np.random.seed(seed)
     # 初始化CPU上PyTorch随机数生成器
     torch.manual_seed(seed)
@@ -26,7 +25,7 @@ def set_seed(seed: int):
     torch.backends.cudnn.benchmark = False
 
 
-def calculate_metrics(true_labels: list, pred_labels: list, num_classes: int = cfg.model.num_classes):
+def calculate_metrics(true_labels: list, pred_labels: list, num_classes: int):
     """
     手动实现多分类评估指标，不依赖sklearn，计算：准确率、宏精确率Macro-P、宏召回Macro-R、宏 F1
     :param true_labels: 真实标签列表（数字），来自验证集labels张量转list

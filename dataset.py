@@ -1,7 +1,6 @@
 import torch
 from torch.utils.data import Dataset
 from transformers import AutoTokenizer
-from config import cfg
 
 
 def load_data(file_path: str, label_map: dict = None):
@@ -38,10 +37,11 @@ def load_data(file_path: str, label_map: dict = None):
 
 
 class NewsDataset(Dataset):
-    def __init__(self, texts: list, labels: list, tokenizer: AutoTokenizer):
+    def __init__(self, texts: list, labels: list, tokenizer: AutoTokenizer, max_len: int):
         self.texts = texts
         self.labels = labels
         self.tokenizer = tokenizer
+        self.max_len = max_len
 
     def __len__(self):
         return len(self.texts)
@@ -70,7 +70,7 @@ class NewsDataset(Dataset):
                 padding="longest",
                 truncation=True,
                 return_tensors="pt",
-                max_length=cfg.train.max_len
+                max_length=self.max_len
             )
             encode["labels"] = torch.tensor(labels, dtype=torch.long)
             return encode

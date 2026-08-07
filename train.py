@@ -5,7 +5,6 @@ import torch
 from torch.utils.data import DataLoader
 from torch.optim import AdamW
 from transformers import get_linear_schedule_with_warmup
-from config import cfg
 from dataset import load_data, NewsDataset
 from transformers import AutoTokenizer
 from model import TextClassificationModel
@@ -13,7 +12,7 @@ from evaluate import evaluate
 from utils import mkdir_if_not_exist
 
 
-def train():
+def train(cfg):
     # ========== 1. 基础环境准备 ==========
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"使用设备: {device}")
@@ -47,9 +46,9 @@ def train():
     tokenizer = AutoTokenizer.from_pretrained(cfg.model.pretrain_name)
 
     # 构建数据集对象
-    train_dataset = NewsDataset(train_texts, train_labels, tokenizer)
-    dev_dataset = NewsDataset(dev_texts, dev_labels, tokenizer)
-    test_dataset = NewsDataset(test_texts, test_labels, tokenizer)
+    train_dataset = NewsDataset(train_texts, train_labels, tokenizer, max_len=cfg.train.max_len)
+    dev_dataset = NewsDataset(dev_texts, dev_labels, tokenizer, max_len=cfg.train.max_len)
+    test_dataset = NewsDataset(test_texts, test_labels, tokenizer, max_len=cfg.train.max_len)
 
     # 构建数据加载器
     train_loader = DataLoader(
@@ -73,7 +72,12 @@ def train():
     print(f"数据集加载完成：训练集{len(train_dataset)}条，验证集{len(dev_dataset)}条，测试集{len(test_dataset)}条")
 
     # ========== 3. 初始化模型、优化器、学习率调度器 ==========
-    model = TextClassificationModel().to(device)
+    model = TextClassificationModel(
+        pretrain_name=cfg.model.pretrain_name,
+        dropout=cfg.model.dropout,
+        hidden_size=cfg.model.hidden_size,
+        num_classes=cfg.model.num_classes
+    ).to(device)
 
     optimizer = AdamW(model.parameters(), lr=cfg.train.lr)
 
@@ -116,7 +120,7 @@ def train():
 
         # ========== 6. 每轮结束，验证集评估 ==========
         avg_train_loss = epoch_train_loss / len(train_loader)
-        dev_metrics = evaluate(model, dev_loader, device)
+        dev_metrics = evaluate(model, dev_loader, device, num_classes=cfg.model.num_classes)
 
         print(f"Epoch {epoch + 1}/{cfg.train.epoch}")
         print(
@@ -151,7 +155,7 @@ def train():
     # ========== 8. 训练结束，加载最优模型跑测试集 ==========
     print("\n训练结束，加载最优模型进行测试集评估...")
     model.load_state_dict(torch.load(best_model_path, map_location=device))
-    test_metrics = evaluate(model, test_loader, device)
+    test_metrics = evaluate(model, test_loader, device, cfg.model.num_classes)
 
     print("\n" + "=" * 50)
     print("📊 测试集最终结果（基于验证集最优模型）")

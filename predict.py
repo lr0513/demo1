@@ -2,7 +2,6 @@ import json
 import torch
 from transformers import AutoTokenizer
 from model import TextClassificationModel
-from config import cfg
 import os
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -19,22 +18,27 @@ def load_label_mapping():
     return label2id, id2label
 
 
-def get_model_and_tokenizer():
+def get_model_and_tokenizer(cfg):
     """延迟加载模型、分词器、标签映射，只有调用时才加载"""
     _, id2label = load_label_mapping()
     tokenizer = AutoTokenizer.from_pretrained(cfg.model.pretrain_name)
-    model = TextClassificationModel().to(device)
+    model = TextClassificationModel(
+        pretrain_name=cfg.model.pretrain_name,
+        dropout=cfg.model.dropout,
+        hidden_size=cfg.model.hidden_size,
+        num_classes=cfg.model.num_classes
+    ).to(device)
     model_path = os.path.join(cfg.save.model_dir, "best_model.bin")
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
     return model, tokenizer, id2label
 
 
-def predict_single(text: str, model=None, tokenizer=None, id2label=None):
+def predict_single(text: str, cfg=None, model=None, tokenizer=None, id2label=None):
     """单条新闻标题预测"""
     # 如果没有传入模型，自动加载
     if model is None:
-        model, tokenizer, id2label = get_model_and_tokenizer()
+        model, tokenizer, id2label = get_model_and_tokenizer(cfg)
 
     inputs = tokenizer(
         text,
@@ -58,7 +62,7 @@ def predict_single(text: str, model=None, tokenizer=None, id2label=None):
 if __name__ == "__main__":
     print("===== 今日头条新闻分类预测程序 =====")
     print("输入新闻标题进行预测，输入 exit 退出\n")
-    model, tokenizer, id2label = get_model_and_tokenizer()
+    model, tokenizer, id2label = get_model_and_tokenizer(cfg)
     while True:
         content = input("请输入新闻标题：")
         if content.strip().lower() == "exit":

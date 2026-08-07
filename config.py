@@ -44,8 +44,8 @@ class ProjectConfig:
 
 
 # 全局配置总类，一次性读取所有配置
-class Config:
-    def __init__(self, json_path: str = "config.json"):
+class ProjectConfigLoader:
+    def __init__(self, json_path: str):
         with open(json_path) as f:
             config = json.load(f)
 
@@ -58,4 +58,3 @@ class Config:
             experiment_name=config["experiment_name"]
         )
 
-cfg = Config()

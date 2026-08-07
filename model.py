@@ -1,6 +1,5 @@
 import torch.nn as nn
 from transformers import AutoModel
-from config import cfg
 
 
 class TextClassificationModel(nn.Module):
@@ -9,14 +8,14 @@ class TextClassificationModel(nn.Module):
     结构：预训练语言模型 + Drought + 全连接分类头
     """
 
-    def __init__(self):
+    def __init__(self, pretrain_name: str, dropout: float, hidden_size: int, num_classes: int):
         super(TextClassificationModel, self).__init__()
         # 加载预训练语言模型
-        self.model = AutoModel.from_pretrained(cfg.model.pretrain_name)
+        self.model = AutoModel.from_pretrained(pretrain_name)
         # Dropout层：防止过拟合，随即损失一部分神经元使其置0
-        self.dropout = nn.Dropout(cfg.model.dropout)
+        self.dropout = nn.Dropout(dropout)
         # 分类全连接层：把768维的向量映射到类别数
-        self.classifier = nn.Linear(cfg.model.hidden_size, cfg.model.num_classes)
+        self.classifier = nn.Linear(hidden_size, num_classes)
 
     def forward(self, input_idx, attention_mask, labels=None):
         """
@@ -29,7 +28,7 @@ class TextClassificationModel(nn.Module):
         # 预训练模型输出，last_hidden_state是最后一层的所有token向量
         outputs = self.model(input_ids=input_idx, attention_mask=attention_mask)
         # 取第0个token（CLS）的向量作为整个句子的表示
-        cls_embedding = outputs.last_hidden_state[:,0,:]  # [batch, token位置, 向量维度]
+        cls_embedding = outputs.last_hidden_state[:, 0, :]  # [batch, token位置, 向量维度]
         # 过dropout，训练时随机失活，推理时自动失效
         cls_embedding = self.dropout(cls_embedding)
         # 全连接层得到logits，模型输出的未经过归一化的原始类别分值

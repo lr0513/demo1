@@ -1,9 +1,8 @@
 import torch
 from utils import calculate_metrics
-from config import cfg
 
 
-def evaluate(model, data_loader, device):
+def evaluate(model, data_loader, device, num_classes: int):
     """
     在指定数据集上评估模型效果（验证集/测试集通用）
     """
@@ -27,9 +26,13 @@ def evaluate(model, data_loader, device):
             all_pred.extend(preds.cpu().numpy().tolist())
             all_true.extend(labels.cpu().numpy().tolist())
 
-    avg_loss = total_loss / len(data_loader)
+    if len(data_loader) > 0:
+        avg_loss = total_loss / len(data_loader)
+    else:
+        avg_loss = 0.0
+
     # 传入实际类别数计算指标
-    metrics = calculate_metrics(all_true, all_pred, num_classes=cfg.model.num_classes)
+    metrics = calculate_metrics(all_true, all_pred, num_classes=num_classes)
     metrics["loss"] = avg_loss
 
     return metrics
