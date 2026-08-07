@@ -3,8 +3,6 @@ from torch.utils.data import Dataset
 from transformers import AutoTokenizer
 from config import cfg
 
-tokenizer = AutoTokenizer.from_pretrained(cfg.model.pretrain_name)
-
 
 def load_data(file_path: str, label_map: dict = None):
     """
@@ -18,7 +16,6 @@ def load_data(file_path: str, label_map: dict = None):
     """
 
     texts = []
-    label = []
     label_list = []  # 临时保存所有类别名，用于构建映射
     with open(file_path, "r", encoding="utf-8") as f:
         for line in f.readlines():
@@ -52,25 +49,30 @@ class NewsDataset(Dataset):
     def __getitem__(self, idx):
         return self.texts[idx], self.labels[idx]
 
+    def get_collate_fn(self):
+        """
+        返回一个绑定了self.tokenizer的collate_fn
+        这样collate_fn就能直接用dataset自己的tokenizer，不再依赖全局变量
+        """
 
-def collate_fn(batch):
-    """
-    自定义批次组装函数，实现批次内动态padding
-    职责：把DataLoader收集到的一批零散样本，加工成模型可以直接输入的张量格式
-    :param batch: batch = [(text1, label1), (text2, label2), ...]
-    :return: 封装好的batch字典
-    """
-    # 把batch里的text和label分开
-    texts, labels = zip(*batch)
+        def collate_fn(batch):
+            """
+            自定义批次组装函数，实现批次内动态padding
+            职责：把DataLoader收集到的一批零散样本，加工成模型可以直接输入的张量格式
+            :param batch: batch = [(text1, label1), (text2, label2), ...]
+            :return: 封装好的batch字典
+            """
+            texts, labels = zip(*batch)
 
-    encode = tokenizer(
-        list(texts),
-        padding="longest",
-        truncation=True,  # 长句截断
-        return_tensors="pt",  # 直接返回PyTorch张量
-        max_length=cfg.train.max_len  # truncation 截断阙值
-    )
+            # 关键：用 self.tokenizer，不再用全局tokenizer！
+            encode = self.tokenizer(
+                list(texts),
+                padding="longest",
+                truncation=True,
+                return_tensors="pt",
+                max_length=cfg.train.max_len
+            )
+            encode["labels"] = torch.tensor(labels, dtype=torch.long)
+            return encode
 
-    # 手动加入标签
-    encode["labels"] = torch.tensor(labels, dtype=torch.long)
-    return encode
+        return collate_fn

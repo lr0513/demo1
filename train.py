@@ -6,7 +6,8 @@ from torch.utils.data import DataLoader
 from torch.optim import AdamW
 from transformers import get_linear_schedule_with_warmup
 from config import cfg
-from dataset import load_data, NewsDataset, collate_fn, tokenizer
+from dataset import load_data, NewsDataset
+from transformers import AutoTokenizer
 from model import TextClassificationModel
 from evaluate import evaluate
 from utils import mkdir_if_not_exist
@@ -43,6 +44,8 @@ def train():
 
     swanlab.config["label_map"] = label_map
 
+    tokenizer = AutoTokenizer.from_pretrained(cfg.model.pretrain_name)
+
     # 构建数据集对象
     train_dataset = NewsDataset(train_texts, train_labels, tokenizer)
     dev_dataset = NewsDataset(dev_texts, dev_labels, tokenizer)
@@ -53,19 +56,19 @@ def train():
         train_dataset,
         batch_size=cfg.train.batch_size,
         shuffle=True,
-        collate_fn=collate_fn
+        collate_fn=train_dataset.get_collate_fn()
     )
     dev_loader = DataLoader(
         dev_dataset,
         batch_size=cfg.train.batch_size,
         shuffle=False,
-        collate_fn=collate_fn
+        collate_fn=dev_dataset.get_collate_fn()
     )
     test_loader = DataLoader(
         test_dataset,
         batch_size=cfg.train.batch_size,
         shuffle=False,
-        collate_fn=collate_fn
+        collate_fn=test_dataset.get_collate_fn()
     )
     print(f"数据集加载完成：训练集{len(train_dataset)}条，验证集{len(dev_dataset)}条，测试集{len(test_dataset)}条")
 
