@@ -32,15 +32,17 @@ project/
 │   └── test_1k.txt          # 测试集，共1064条
 ├── save_model/              # 最优模型权重保存目录（自动创建）
 ├── logs/                    # 训练日志目录（自动创建）
-├── config.json              # 全局超参数配置文件
-├── config.py                # 配置解析类，加载JSON参数
-├── dataset.py               # 数据加载、自定义Dataset、批次处理
-├── model.py                 # BERT分类模型定义
-├── train.py                 # 训练主逻辑、验证、早停、模型保存
-├── evaluate.py              # 模型评估推理逻辑
-├── utils.py                 # 工具函数：种子固定、指标计算、文件工具
-├── main.py                  # 项目统一入口
-├── .gitignore               # Git忽略文件配置
+├── config.json              # 实验超参数配置文件，可存放多份json做对比实验
+├── config.py                # 配置解析类，加载JSON参数，不再导出全局cfg
+├── dataset.py               # 数据加载、自定义Dataset、批次collate处理
+├── model.py                 # BERT分类模型定义，超参由构造函数传入
+├── train.py                 # 训练主逻辑、验证、早停、最优模型保存
+├── evaluate.py              # 模型评估函数
+├── utils.py                 # 工具函数：种子固定、手写分类指标计算、文件夹创建
+├── predict.py               # 单条样本预测逻辑，自动读取label_map.json
+├── main.py                  # 项目统一入口，argparse解析配置路径，训练+交互式预测
+├── label_map.json           # 训练后自动生成，类别-数字id映射，预测阶段使用
+├── .gitignore               # Git忽略文件配置，忽略.idea、模型权重、日志等
 └── README.md                # 项目说明文档
 ```
 
@@ -70,11 +72,21 @@ project/
 | news_world | 国际新闻 |
 | stock | 股票资讯 |
 
+## 运行方式
+本项目使用argparse命令行参数指定配置文件，不可直接点击运行main.py，必须传入--config_path参数
+### 方式一：终端运行
+```bash
+# 使用根目录下config.json配置
+python main.py --config_path config.json
 
-## 五、实验结果
-swanlab: 📁 View project at https://swanlab.cn/@lr0513/bert-toutiao-classify</br>
-swanlab: 🚀 View run bert-base_maxlen128_dropout0.2 at 
-https://swanlab.cn/@lr0513/bert-toutiao-classify/runs/1qu7ebkj</br>
+# 切换其他实验配置文件
+# python main.py --config_path configs/exp_bert-base-chinese_lr2e-5_bs16_len128_0704.json
+```
+### 方式二：PyCharm运行配置
+1. Edit Configurations → 选中main.py 
+2. 在Parameters填写：--config_path config.json 
+3. 保存后点击运行；训练结束自动进入交互式预测，输入新闻标题得到分类，输入exit退出程序。
+## 六、实验结果
 **实验配置**：
 - 预训练模型：bert-base-chinese
 - 最大序列长度：128 
@@ -82,14 +94,23 @@ https://swanlab.cn/@lr0513/bert-toutiao-classify/runs/1qu7ebkj</br>
 - 学习率：2e-5 
 - Dropout：0.2 
 - 早停耐心值：5
+> 测试集评估：训练完成加载验证集最优权重进行测试集评估，不使用最有一轮epoch模型，避免高估模型效果
+
+### 训练结果分析（对应SwanLab可视化图表）
+swanlab: 📁 View project at https://swanlab.cn/@lr0513/bert-toutiao-classify</br>
+swanlab: 🚀 View run bert-base_maxlen128_dropout0.2 at 
+https://swanlab.cn/@lr0513/bert-toutiao-classify/runs/gbc7vnzm</br>
+</br>从训练可视化曲线可以观察到：</br>
+1. **训练损失**：训练损失快速下降，在第10个epoch之后趋于平稳，模型充分拟合训练数据。
+2. **验证集指标（准确率、精确率、召回率、F1）**：前期快速上升，后期在小范围内震荡，没有出现明显持续下降，无严重过拟合现象；指标存在小幅波动属于小数据集训练的正常现象。
+3. **学习率曲线**：执行预热后线性衰减策略，前期学习率小幅上升预热，之后逐步降低，符合 BERT 微调的标准学习率调度方案，有助于模型稳定收敛。
+> 综合曲线表现：模型收敛状态健康，因此保存验证集最优权重用于测试集评估，可以得到可靠的泛化结果。
 
 **核心指标**：
 - 准确率: 0.8318
 - 宏精确率: 0.8286
 - 宏召回率: 0.8089
-- 宏F1值:   0.8163
-
-**结果分析**：
-> 验证集最优指标与测试集指标差距很小，模型泛化性能良好，无严重过拟合。少量类别存在识别混淆，主要来自类别边界模糊、样本不均衡问题。
+- 宏F1值: 0.8163
+> 结果分析：验证集最优指标与测试集指标差距很小，模型泛化性能良好，无严重过拟合。少量类别存在识别混淆，主要来自类别边界模糊、样本不均衡问题。
 
 ![](https://obsidian-1322827540.cos.ap-guangzhou.myqcloud.com/img/cb39d6024d5895faa2990bc49f9ab1e7.png)
